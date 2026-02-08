@@ -6,9 +6,12 @@ interface YearCalendarProps {
 	birthDate: Date;
 	dayMap: Map<string, LeaveType>;
 	workWeek: WorkWeekPattern;
+	selectedBrush: LeaveType | null;
+	onDayClick: (dateKey: string) => void;
+	isManualDay: (dateKey: string) => boolean;
 }
 
-export function YearCalendar({ birthDate, dayMap, workWeek }: YearCalendarProps) {
+export function YearCalendar({ birthDate, dayMap, workWeek, selectedBrush, onDayClick, isManualDay }: YearCalendarProps) {
 	const months = getMonthsInScope(birthDate);
 
 	return (
@@ -20,6 +23,9 @@ export function YearCalendar({ birthDate, dayMap, workWeek }: YearCalendarProps)
 					month={month}
 					dayMap={dayMap}
 					workWeek={workWeek}
+					selectedBrush={selectedBrush}
+					onDayClick={onDayClick}
+					isManualDay={isManualDay}
 				/>
 			))}
 		</div>

@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { addWeeks, addDays } from "date-fns";
 import {
 	type LeavePeriod,
+	type LeaveType,
 	type PlannerInput,
 	type WorkWeekPattern,
 } from "@/lib/constants";
@@ -60,6 +61,10 @@ export function usePlannerState() {
 	const [vakantiedagenBudget, setVakantiedagenBudget] = useState(
 		urlState.current?.vakantiedagenBudget ?? 20,
 	);
+	const [manualDays, setManualDays] = useState<Record<string, LeaveType>>(
+		urlState.current?.manualDays ?? {},
+	);
+	const [selectedBrush, setSelectedBrush] = useState<LeaveType | null>(null);
 	const [hasInitialized, setHasInitialized] = useState(initializedFromUrl);
 
 	// Sync nextId to avoid collisions with restored periods
@@ -92,8 +97,9 @@ export function usePlannerState() {
 			workWeek,
 			vakantiedagenBudget,
 			leavePeriods,
+			manualDays,
 		});
-	}, [birthDate, workWeek, vakantiedagenBudget, leavePeriods]);
+	}, [birthDate, workWeek, vakantiedagenBudget, leavePeriods, manualDays]);
 
 	const input: PlannerInput = useMemo(
 		() => ({
@@ -106,10 +112,21 @@ export function usePlannerState() {
 		[birthDate, workWeek, monthlySalary, leavePeriods, vakantiedagenBudget],
 	);
 
-	const { dayMap, overlaps } = useMemo(() => {
+	const { dayMap: periodDayMap, overlaps } = useMemo(() => {
 		if (!birthDate) return { dayMap: new Map(), overlaps: new Set<string>() };
 		return generateDayMapFromPeriods(leavePeriods, workWeek, vakantiedagenBudget);
 	}, [birthDate, leavePeriods, workWeek, vakantiedagenBudget]);
+
+	// Merge manual days into dayMap (only for keys NOT already covered by periods)
+	const dayMap = useMemo(() => {
+		const merged = new Map(periodDayMap);
+		for (const [key, type] of Object.entries(manualDays)) {
+			if (!merged.has(key)) {
+				merged.set(key, type);
+			}
+		}
+		return merged;
+	}, [periodDayMap, manualDays]);
 
 	const leaveBudgets = useMemo(
 		() => calculateLeaveBudgets(dayMap, workWeek, vakantiedagenBudget),
@@ -140,6 +157,22 @@ export function usePlannerState() {
 		);
 	}, []);
 
+	const toggleManualDay = useCallback(
+		(dateKey: string) => {
+			setManualDays((prev) => {
+				if (prev[dateKey]) {
+					const { [dateKey]: _, ...rest } = prev;
+					return rest;
+				}
+				if (selectedBrush) {
+					return { ...prev, [dateKey]: selectedBrush };
+				}
+				return prev;
+			});
+		},
+		[selectedBrush],
+	);
+
 	return {
 		birthDate,
 		setBirthDate,
@@ -157,5 +190,9 @@ export function usePlannerState() {
 		leaveBudgets,
 		financialSummary,
 		validationErrors,
+		manualDays,
+		selectedBrush,
+		setSelectedBrush,
+		toggleManualDay,
 	};
 }

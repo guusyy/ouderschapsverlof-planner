@@ -11,9 +11,12 @@ interface MonthGridProps {
 	month: number;
 	dayMap: Map<string, LeaveType>;
 	workWeek: WorkWeekPattern;
+	selectedBrush: LeaveType | null;
+	onDayClick: (dateKey: string) => void;
+	isManualDay: (dateKey: string) => boolean;
 }
 
-export function MonthGrid({ year, month, dayMap, workWeek }: MonthGridProps) {
+export function MonthGrid({ year, month, dayMap, workWeek, selectedBrush, onDayClick, isManualDay }: MonthGridProps) {
 	const grid = getMonthGrid(year, month);
 	const dayNames = getDutchDayAbbreviations();
 	const monthName = getDutchMonthName(month);
@@ -33,7 +36,15 @@ export function MonthGrid({ year, month, dayMap, workWeek }: MonthGridProps) {
 					</div>
 				))}
 				{grid.map((date, i) => (
-					<DayCell key={i} date={date} dayMap={dayMap} workWeek={workWeek} />
+					<DayCell
+						key={i}
+						date={date}
+						dayMap={dayMap}
+						workWeek={workWeek}
+						selectedBrush={selectedBrush}
+						onDayClick={onDayClick}
+						isManualDay={isManualDay}
+					/>
 				))}
 			</div>
 		</div>

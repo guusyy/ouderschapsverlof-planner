@@ -48,6 +48,7 @@ interface CompactState {
 	w: { e: number; u: number; h: number };
 	v: number;
 	p: CompactPeriod[];
+	m?: Record<string, string>;
 }
 
 export interface UrlPlannerState {
@@ -55,10 +56,11 @@ export interface UrlPlannerState {
 	workWeek: WorkWeekPattern;
 	vakantiedagenBudget: number;
 	leavePeriods: LeavePeriod[];
+	manualDays: Record<string, LeaveType>;
 }
 
 function serializeState(state: UrlPlannerState): CompactState {
-	return {
+	const compact: CompactState = {
 		b: format(state.birthDate, "yyyy-MM-dd"),
 		w: {
 			e: boolArrayToBitmask(state.workWeek.evenWeek),
@@ -67,7 +69,7 @@ function serializeState(state: UrlPlannerState): CompactState {
 		},
 		v: state.vakantiedagenBudget,
 		p: state.leavePeriods.map((p) => {
-			const compact: CompactPeriod = {
+			const cp: CompactPeriod = {
 				t: p.leaveTypes.map((lt) => LEAVE_TYPE_TO_CODE[lt]),
 				s: format(p.startDate, "yyyy-MM-dd"),
 				e: format(p.endDate, "yyyy-MM-dd"),
@@ -75,11 +77,19 @@ function serializeState(state: UrlPlannerState): CompactState {
 				w: p.everyWeek ? 1 : 0,
 			};
 			if (!p.everyWeek && p.weekFilter) {
-				compact.f = p.weekFilter === "even" ? "e" : "u";
+				cp.f = p.weekFilter === "even" ? "e" : "u";
 			}
-			return compact;
+			return cp;
 		}),
 	};
+	const manualKeys = Object.keys(state.manualDays);
+	if (manualKeys.length > 0) {
+		compact.m = {};
+		for (const key of manualKeys) {
+			compact.m[key] = LEAVE_TYPE_TO_CODE[state.manualDays[key]];
+		}
+	}
+	return compact;
 }
 
 function deserializeState(data: CompactState): UrlPlannerState | null {
@@ -107,11 +117,20 @@ function deserializeState(data: CompactState): UrlPlannerState | null {
 				p.f === "e" ? "even" : p.f === "u" ? "uneven" : undefined,
 		}));
 
+		const manualDays: Record<string, LeaveType> = {};
+		if (data.m) {
+			for (const [key, code] of Object.entries(data.m)) {
+				const lt = CODE_TO_LEAVE_TYPE[code];
+				if (lt) manualDays[key] = lt;
+			}
+		}
+
 		return {
 			birthDate,
 			workWeek,
 			vakantiedagenBudget: data.v,
 			leavePeriods,
+			manualDays,
 		};
 	} catch {
 		return null;

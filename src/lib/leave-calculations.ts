@@ -68,7 +68,18 @@ export function generateDayMapFromPeriods(
 	// Track remaining budget per type (mutable)
 	const remaining = new Map<LeaveType, number>();
 	for (const [type, max] of maxBudget) {
-		remaining.set(type, max);
+		if (type !== "vakantiedagen") {
+			remaining.set(type, max);
+		}
+	}
+
+	// Vakantiedagen budget resets per calendar year
+	const vakantiedagenPerYear = new Map<number, number>();
+	function getVakantiedagenRemaining(year: number): number {
+		if (!vakantiedagenPerYear.has(year)) {
+			vakantiedagenPerYear.set(year, vakantiedagenBudget);
+		}
+		return vakantiedagenPerYear.get(year)!;
 	}
 
 	for (const period of periods) {
@@ -106,12 +117,23 @@ export function generateDayMapFromPeriods(
 			// Pick the first type with remaining budget
 			let assigned = false;
 			for (const type of sortedTypes) {
-				const rem = remaining.get(type) ?? 0;
-				if (rem > 0) {
-					dayMap.set(key, type);
-					remaining.set(type, rem - 1);
-					assigned = true;
-					break;
+				if (type === "vakantiedagen") {
+					const year = date.getFullYear();
+					const rem = getVakantiedagenRemaining(year);
+					if (rem > 0) {
+						dayMap.set(key, type);
+						vakantiedagenPerYear.set(year, rem - 1);
+						assigned = true;
+						break;
+					}
+				} else {
+					const rem = remaining.get(type) ?? 0;
+					if (rem > 0) {
+						dayMap.set(key, type);
+						remaining.set(type, rem - 1);
+						assigned = true;
+						break;
+					}
 				}
 			}
 
@@ -133,6 +155,7 @@ export interface LeaveBudget {
 	label: string;
 	used: number;
 	max: number;
+	year?: number;
 }
 
 export function calculateLeaveBudgets(
@@ -144,26 +167,48 @@ export function calculateLeaveBudgets(
 
 	// Count used days per type directly from dayMap
 	const usedDays = new Map<LeaveType, number>();
-	for (const [, type] of dayMap) {
+	// Track vakantiedagen per year
+	const vakantiedagenPerYear = new Map<number, number>();
+	for (const [key, type] of dayMap) {
 		usedDays.set(type, (usedDays.get(type) ?? 0) + 1);
+		if (type === "vakantiedagen") {
+			const year = Number.parseInt(key.substring(0, 4), 10);
+			vakantiedagenPerYear.set(year, (vakantiedagenPerYear.get(year) ?? 0) + 1);
+		}
 	}
 
-	return LEAVE_TYPES.map((type) => {
+	const budgets: LeaveBudget[] = [];
+
+	for (const type of LEAVE_TYPES) {
+		if (type === "vakantiedagen") continue;
 		const rule = LEAVE_RULES[type];
 		const used = usedDays.get(type) ?? 0;
-		let max: number;
-		if (type === "vakantiedagen") {
-			max = vakantiedagenBudget;
-		} else {
-			max = rule.maxWeeks === Infinity ? Infinity : Math.round(rule.maxWeeks * avgDaysPerWeek);
+		const max = rule.maxWeeks === Infinity ? Infinity : Math.round(rule.maxWeeks * avgDaysPerWeek);
+		budgets.push({ type, label: rule.shortLabel, used, max });
+	}
+
+	// Add per-year vakantiedagen budgets
+	const years = Array.from(vakantiedagenPerYear.keys()).sort();
+	if (years.length === 0) {
+		budgets.push({
+			type: "vakantiedagen",
+			label: LEAVE_RULES.vakantiedagen.shortLabel,
+			used: 0,
+			max: vakantiedagenBudget,
+		});
+	} else {
+		for (const year of years) {
+			budgets.push({
+				type: "vakantiedagen",
+				label: `${LEAVE_RULES.vakantiedagen.shortLabel} ${year}`,
+				used: vakantiedagenPerYear.get(year) ?? 0,
+				max: vakantiedagenBudget,
+				year,
+			});
 		}
-		return {
-			type,
-			label: rule.shortLabel,
-			used,
-			max,
-		};
-	});
+	}
+
+	return budgets;
 }
 
 export interface FinancialRow {
@@ -346,8 +391,11 @@ export function validateLeaveConfig(
 	// Check budget overflows
 	for (const budget of budgets) {
 		if (budget.used > budget.max && budget.max !== Infinity) {
+			const label = budget.year
+				? `${LEAVE_RULES[budget.type].label} ${budget.year}`
+				: LEAVE_RULES[budget.type].label;
 			warnings.push(
-				`${LEAVE_RULES[budget.type].label}: ${budget.used} dagen gebruikt, maar budget is ${budget.max} dagen.`,
+				`${label}: ${budget.used} dagen gebruikt, maar budget is ${budget.max} dagen.`,
 			);
 		}
 	}

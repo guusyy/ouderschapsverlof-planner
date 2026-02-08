@@ -1,9 +1,11 @@
+import { useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AlertTriangle, CalendarDays } from "lucide-react";
 import { usePlannerState } from "@/hooks/use-planner-state";
 import { PlannerSidebar } from "@/components/planner/PlannerSidebar";
 import { CalendarLegend } from "@/components/planner/CalendarLegend";
+import { BrushBar } from "@/components/planner/BrushBar";
 import { YearCalendar } from "@/components/planner/YearCalendar";
 import { FinancialSummary } from "@/components/planner/FinancialSummary";
 
@@ -27,7 +29,16 @@ function App() {
 		leaveBudgets,
 		financialSummary,
 		validationErrors,
+		manualDays,
+		selectedBrush,
+		setSelectedBrush,
+		toggleManualDay,
 	} = usePlannerState();
+
+	const isManualDay = useCallback(
+		(dateKey: string) => dateKey in manualDays,
+		[manualDays],
+	);
 
 	return (
 		<TooltipProvider delayDuration={200}>
@@ -72,10 +83,17 @@ function App() {
 					{birthDate ? (
 						<>
 							<CalendarLegend dayMap={dayMap} />
+							<BrushBar
+								selectedBrush={selectedBrush}
+								onSelectBrush={setSelectedBrush}
+							/>
 							<YearCalendar
 								birthDate={birthDate}
 								dayMap={dayMap}
 								workWeek={workWeek}
+								selectedBrush={selectedBrush}
+								onDayClick={toggleManualDay}
+								isManualDay={isManualDay}
 							/>
 							<FinancialSummary summary={financialSummary} />
 						</>
