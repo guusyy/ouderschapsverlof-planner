@@ -1,6 +1,8 @@
 import { format, parseISO } from "date-fns";
 import type { LeavePeriod, LeaveType, WorkWeekPattern } from "./constants";
 
+export type CustomMaxWeeks = Partial<Record<LeaveType, number>>;
+
 // Compact leave type codes
 const LEAVE_TYPE_TO_CODE: Record<LeaveType, string> = {
 	geboorteverlof: "g",
@@ -49,6 +51,7 @@ interface CompactState {
 	v: number;
 	p: CompactPeriod[];
 	m?: Record<string, string>;
+	c?: Record<string, number>;
 }
 
 export interface UrlPlannerState {
@@ -57,6 +60,7 @@ export interface UrlPlannerState {
 	vakantiedagenBudget: number;
 	leavePeriods: LeavePeriod[];
 	manualDays: Record<string, LeaveType>;
+	customMaxWeeks: CustomMaxWeeks;
 }
 
 function serializeState(state: UrlPlannerState): CompactState {
@@ -87,6 +91,17 @@ function serializeState(state: UrlPlannerState): CompactState {
 		compact.m = {};
 		for (const key of manualKeys) {
 			compact.m[key] = LEAVE_TYPE_TO_CODE[state.manualDays[key]];
+		}
+	}
+	const customKeys = Object.keys(state.customMaxWeeks);
+	if (customKeys.length > 0) {
+		compact.c = {};
+		for (const key of customKeys) {
+			const code = LEAVE_TYPE_TO_CODE[key as LeaveType];
+			const val = state.customMaxWeeks[key as LeaveType];
+			if (code && val !== undefined) {
+				compact.c[code] = val;
+			}
 		}
 	}
 	return compact;
@@ -125,12 +140,21 @@ function deserializeState(data: CompactState): UrlPlannerState | null {
 			}
 		}
 
+		const customMaxWeeks: CustomMaxWeeks = {};
+		if (data.c) {
+			for (const [code, val] of Object.entries(data.c)) {
+				const lt = CODE_TO_LEAVE_TYPE[code];
+				if (lt) customMaxWeeks[lt] = val;
+			}
+		}
+
 		return {
 			birthDate,
 			workWeek,
 			vakantiedagenBudget: data.v,
 			leavePeriods,
 			manualDays,
+			customMaxWeeks,
 		};
 	} catch {
 		return null;

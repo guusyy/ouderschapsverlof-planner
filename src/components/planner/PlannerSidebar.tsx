@@ -13,6 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import type { WorkWeekPattern, LeavePeriod } from "@/lib/constants";
 import type { LeaveBudget } from "@/lib/leave-calculations";
+import type { CustomMaxWeeks } from "@/lib/url-state";
 import { cn } from "@/lib/utils";
 import { WorkWeekEditor } from "./WorkWeekEditor";
 import { LeaveBudgetSummary } from "./LeaveBudgetSummary";
@@ -31,6 +32,8 @@ interface PlannerSidebarProps {
 	onUpdatePeriod: (id: string, updates: Partial<LeavePeriod>) => void;
 	vakantiedagenBudget: number;
 	onVakantiedagenBudgetChange: (budget: number) => void;
+	customMaxWeeks: CustomMaxWeeks;
+	onCustomMaxWeeksChange: (value: CustomMaxWeeks) => void;
 	leaveBudgets: LeaveBudget[];
 }
 
@@ -47,6 +50,8 @@ export function PlannerSidebar({
 	onUpdatePeriod,
 	vakantiedagenBudget,
 	onVakantiedagenBudgetChange,
+	customMaxWeeks,
+	onCustomMaxWeeksChange,
 	leaveBudgets,
 }: PlannerSidebarProps) {
 	const handleAddPeriod = () => {
@@ -133,30 +138,14 @@ export function PlannerSidebar({
 				onChange={onWorkWeekChange}
 			/>
 
-			{/* Vakantiedagen budget */}
-			<div className="space-y-2">
-				<Label className="text-xs text-slate-500">
-					Vakantiedagen budget
-				</Label>
-				<Input
-					type="number"
-					value={vakantiedagenBudget}
-					onChange={(e) =>
-						onVakantiedagenBudgetChange(
-							Number(e.target.value) || 0,
-						)
-					}
-					min={0}
-					max={50}
-					step={1}
-					className="h-8 text-sm"
-				/>
-			</div>
-
-			<Separator />
-
 			{/* Leave budget summary */}
-			<LeaveBudgetSummary budgets={leaveBudgets} />
+			<LeaveBudgetSummary
+				budgets={leaveBudgets}
+				customMaxWeeks={customMaxWeeks}
+				onCustomMaxWeeksChange={onCustomMaxWeeksChange}
+				vakantiedagenBudget={vakantiedagenBudget}
+				onVakantiedagenBudgetChange={onVakantiedagenBudgetChange}
+			/>
 
 			<Separator />
 

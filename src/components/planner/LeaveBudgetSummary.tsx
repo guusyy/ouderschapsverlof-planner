@@ -1,17 +1,43 @@
+import { useState } from "react";
+import { Pencil } from "lucide-react";
 import { LEAVE_COLORS } from "@/lib/constants";
 import type { LeaveBudget } from "@/lib/leave-calculations";
+import type { CustomMaxWeeks } from "@/lib/url-state";
 import { cn } from "@/lib/utils";
+import { BudgetEditDialog } from "./BudgetEditDialog";
 
 interface LeaveBudgetSummaryProps {
 	budgets: LeaveBudget[];
+	customMaxWeeks: CustomMaxWeeks;
+	onCustomMaxWeeksChange: (value: CustomMaxWeeks) => void;
+	vakantiedagenBudget: number;
+	onVakantiedagenBudgetChange: (budget: number) => void;
 }
 
-export function LeaveBudgetSummary({ budgets }: LeaveBudgetSummaryProps) {
+export function LeaveBudgetSummary({
+	budgets,
+	customMaxWeeks,
+	onCustomMaxWeeksChange,
+	vakantiedagenBudget,
+	onVakantiedagenBudgetChange,
+}: LeaveBudgetSummaryProps) {
+	const [dialogOpen, setDialogOpen] = useState(false);
+
 	return (
 		<div className="space-y-2">
-			<h3 className="text-sm font-semibold text-slate-700">
-				Verlofbudget
-			</h3>
+			<div className="flex items-center justify-between">
+				<h3 className="text-sm font-semibold text-slate-700">
+					Verlofbudget
+				</h3>
+				<button
+					type="button"
+					onClick={() => setDialogOpen(true)}
+					className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+				>
+					<Pencil className="h-3 w-3" />
+					Aanpassen
+				</button>
+			</div>
 			{budgets.map((budget) => {
 				const overBudget = budget.used > budget.max && budget.max !== Infinity;
 				const percentage =
@@ -60,6 +86,15 @@ export function LeaveBudgetSummary({ budgets }: LeaveBudgetSummaryProps) {
 					</div>
 				);
 			})}
+
+			<BudgetEditDialog
+				open={dialogOpen}
+				onOpenChange={setDialogOpen}
+				customMaxWeeks={customMaxWeeks}
+				onCustomMaxWeeksChange={onCustomMaxWeeksChange}
+				vakantiedagenBudget={vakantiedagenBudget}
+				onVakantiedagenBudgetChange={onVakantiedagenBudgetChange}
+			/>
 		</div>
 	);
 }

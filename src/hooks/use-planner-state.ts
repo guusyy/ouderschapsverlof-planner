@@ -14,7 +14,7 @@ import {
 } from "@/lib/leave-calculations";
 import { calculateNetFinancialSummary } from "@/lib/tax-calculations";
 import { FULLTIME_HOURS } from "@/lib/constants";
-import { serializeToUrl, deserializeFromUrl } from "@/lib/url-state";
+import { serializeToUrl, deserializeFromUrl, type CustomMaxWeeks } from "@/lib/url-state";
 
 const DEFAULT_WORK_WEEK: WorkWeekPattern = {
 	evenWeek: [true, true, true, true, false],
@@ -66,6 +66,9 @@ export function usePlannerState() {
 	const [manualDays, setManualDays] = useState<Record<string, LeaveType>>(
 		urlState.current?.manualDays ?? {},
 	);
+	const [customMaxWeeks, setCustomMaxWeeks] = useState<CustomMaxWeeks>(
+		urlState.current?.customMaxWeeks ?? {},
+	);
 	const [selectedBrush, setSelectedBrush] = useState<LeaveType | null>(null);
 	const [hasInitialized, setHasInitialized] = useState(initializedFromUrl);
 
@@ -100,8 +103,9 @@ export function usePlannerState() {
 			vakantiedagenBudget,
 			leavePeriods,
 			manualDays,
+			customMaxWeeks,
 		});
-	}, [birthDate, workWeek, vakantiedagenBudget, leavePeriods, manualDays]);
+	}, [birthDate, workWeek, vakantiedagenBudget, leavePeriods, manualDays, customMaxWeeks]);
 
 	const input: PlannerInput = useMemo(
 		() => ({
@@ -116,8 +120,8 @@ export function usePlannerState() {
 
 	const { dayMap: periodDayMap, overlaps } = useMemo(() => {
 		if (!birthDate) return { dayMap: new Map(), overlaps: new Set<string>() };
-		return generateDayMapFromPeriods(leavePeriods, workWeek, vakantiedagenBudget);
-	}, [birthDate, leavePeriods, workWeek, vakantiedagenBudget]);
+		return generateDayMapFromPeriods(leavePeriods, workWeek, vakantiedagenBudget, customMaxWeeks);
+	}, [birthDate, leavePeriods, workWeek, vakantiedagenBudget, customMaxWeeks]);
 
 	// Merge manual days into dayMap (only for keys NOT already covered by periods)
 	const dayMap = useMemo(() => {
@@ -131,8 +135,8 @@ export function usePlannerState() {
 	}, [periodDayMap, manualDays]);
 
 	const leaveBudgets = useMemo(
-		() => calculateLeaveBudgets(dayMap, workWeek, vakantiedagenBudget),
-		[dayMap, workWeek, vakantiedagenBudget],
+		() => calculateLeaveBudgets(dayMap, workWeek, vakantiedagenBudget, customMaxWeeks),
+		[dayMap, workWeek, vakantiedagenBudget, customMaxWeeks],
 	);
 
 	const financialSummary = useMemo(
@@ -196,6 +200,8 @@ export function usePlannerState() {
 		updatePeriod,
 		vakantiedagenBudget,
 		setVakantiedagenBudget,
+		customMaxWeeks,
+		setCustomMaxWeeks,
 		dayMap,
 		leaveBudgets,
 		financialSummary,

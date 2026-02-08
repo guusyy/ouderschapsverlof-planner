@@ -9,6 +9,7 @@ import {
 	LEAVE_TYPE_PRIORITY,
 	FULLTIME_HOURS,
 } from "./constants";
+import type { CustomMaxWeeks } from "./url-state";
 import { isFeestdag } from "./feestdagen";
 
 /**
@@ -49,6 +50,7 @@ export function generateDayMapFromPeriods(
 	periods: LeavePeriod[],
 	workWeek: WorkWeekPattern,
 	vakantiedagenBudget: number,
+	customMaxWeeks: CustomMaxWeeks = {},
 ): { dayMap: Map<string, LeaveType>; overlaps: Set<string> } {
 	const dayMap = new Map<string, LeaveType>();
 	const overlaps = new Set<string>();
@@ -60,8 +62,8 @@ export function generateDayMapFromPeriods(
 		if (type === "vakantiedagen") {
 			maxBudget.set(type, vakantiedagenBudget);
 		} else {
-			const rule = LEAVE_RULES[type];
-			maxBudget.set(type, rule.maxWeeks === Infinity ? Infinity : Math.round(rule.maxWeeks * avgDays));
+			const maxWeeks = customMaxWeeks[type] ?? LEAVE_RULES[type].maxWeeks;
+			maxBudget.set(type, maxWeeks === Infinity ? Infinity : Math.round(maxWeeks * avgDays));
 		}
 	}
 
@@ -162,6 +164,7 @@ export function calculateLeaveBudgets(
 	dayMap: Map<string, LeaveType>,
 	workWeek: WorkWeekPattern,
 	vakantiedagenBudget: number,
+	customMaxWeeks: CustomMaxWeeks = {},
 ): LeaveBudget[] {
 	const avgDaysPerWeek = avgWorkDaysPerWeek(workWeek);
 
@@ -183,7 +186,8 @@ export function calculateLeaveBudgets(
 		if (type === "vakantiedagen") continue;
 		const rule = LEAVE_RULES[type];
 		const used = usedDays.get(type) ?? 0;
-		const max = rule.maxWeeks === Infinity ? Infinity : Math.round(rule.maxWeeks * avgDaysPerWeek);
+		const maxWeeks = customMaxWeeks[type] ?? rule.maxWeeks;
+		const max = maxWeeks === Infinity ? Infinity : Math.round(maxWeeks * avgDaysPerWeek);
 		budgets.push({ type, label: rule.shortLabel, used, max });
 	}
 

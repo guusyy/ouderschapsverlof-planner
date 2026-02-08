@@ -53,12 +53,6 @@ export function FinancialSummary({
 											Dagen
 										</th>
 										<th className="pb-2 pr-4 font-medium text-right">
-											Normaal
-										</th>
-										<th className="pb-2 pr-4 font-medium text-right">
-											Werkelijk
-										</th>
-										<th className="pb-2 pr-4 font-medium text-right">
 											{hasNetto ? "Bruto verschil" : "Verschil"}
 										</th>
 										{hasNetto && (
@@ -95,12 +89,6 @@ export function FinancialSummary({
 												</td>
 												<td className="py-2 pr-4 text-right text-slate-700 align-top">
 													{row.days}
-												</td>
-												<td className="py-2 pr-4 text-right text-slate-700 align-top">
-													{formatCurrency(row.normalIncome)}
-												</td>
-												<td className="py-2 pr-4 text-right text-slate-700 align-top">
-													{formatCurrency(row.totalIncome)}
 												</td>
 												<td
 													className={cn(
@@ -147,16 +135,6 @@ export function FinancialSummary({
 										</td>
 										<td className="pt-3 pr-4 text-right text-slate-700">
 											{summary.perType.reduce((sum, r) => sum + r.days, 0)}
-										</td>
-										<td className="pt-3 pr-4 text-right text-slate-700">
-											{formatCurrency(
-												summary.perType.reduce((sum, r) => sum + r.normalIncome, 0),
-											)}
-										</td>
-										<td className="pt-3 pr-4 text-right text-slate-700">
-											{formatCurrency(
-												summary.perType.reduce((sum, r) => sum + r.totalIncome, 0),
-											)}
 										</td>
 										<td
 											className={cn(

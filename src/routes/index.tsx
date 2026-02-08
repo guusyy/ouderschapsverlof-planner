@@ -25,6 +25,8 @@ function App() {
 		updatePeriod,
 		vakantiedagenBudget,
 		setVakantiedagenBudget,
+		customMaxWeeks,
+		setCustomMaxWeeks,
 		dayMap,
 		leaveBudgets,
 		financialSummary,
@@ -59,6 +61,8 @@ function App() {
 						onUpdatePeriod={updatePeriod}
 						vakantiedagenBudget={vakantiedagenBudget}
 						onVakantiedagenBudgetChange={setVakantiedagenBudget}
+						customMaxWeeks={customMaxWeeks}
+						onCustomMaxWeeksChange={setCustomMaxWeeks}
 						leaveBudgets={leaveBudgets}
 					/>
 				</aside>
