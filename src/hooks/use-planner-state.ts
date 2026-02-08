@@ -12,6 +12,8 @@ import {
 	calculateFinancialSummary,
 	validateLeaveConfig,
 } from "@/lib/leave-calculations";
+import { calculateNetFinancialSummary } from "@/lib/tax-calculations";
+import { FULLTIME_HOURS } from "@/lib/constants";
 import { serializeToUrl, deserializeFromUrl } from "@/lib/url-state";
 
 const DEFAULT_WORK_WEEK: WorkWeekPattern = {
@@ -65,6 +67,7 @@ export function usePlannerState() {
 		urlState.current?.manualDays ?? {},
 	);
 	const [selectedBrush, setSelectedBrush] = useState<LeaveType | null>(null);
+	const [showNetto, setShowNetto] = useState(false);
 	const [hasInitialized, setHasInitialized] = useState(initializedFromUrl);
 
 	// Sync nextId to avoid collisions with restored periods
@@ -138,6 +141,14 @@ export function usePlannerState() {
 		[input, dayMap],
 	);
 
+	const netFinancialSummary = useMemo(() => {
+		if (!showNetto || monthlySalary <= 0 || !birthDate) return null;
+		const workRatio = workWeek.hoursPerWeek / FULLTIME_HOURS;
+		const scaledMonthlySalary = monthlySalary * workRatio;
+		const taxYear = birthDate.getFullYear();
+		return calculateNetFinancialSummary(financialSummary, scaledMonthlySalary, taxYear);
+	}, [showNetto, monthlySalary, birthDate, workWeek.hoursPerWeek, financialSummary]);
+
 	const validationErrors = useMemo(
 		() => validateLeaveConfig(input, dayMap, overlaps, leaveBudgets),
 		[input, dayMap, overlaps, leaveBudgets],
@@ -189,6 +200,9 @@ export function usePlannerState() {
 		dayMap,
 		leaveBudgets,
 		financialSummary,
+		netFinancialSummary,
+		showNetto,
+		setShowNetto,
 		validationErrors,
 		manualDays,
 		selectedBrush,

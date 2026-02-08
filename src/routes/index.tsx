@@ -28,6 +28,9 @@ function App() {
 		dayMap,
 		leaveBudgets,
 		financialSummary,
+		netFinancialSummary,
+		showNetto,
+		setShowNetto,
 		validationErrors,
 		manualDays,
 		selectedBrush,
@@ -95,7 +98,12 @@ function App() {
 								onDayClick={toggleManualDay}
 								isManualDay={isManualDay}
 							/>
-							<FinancialSummary summary={financialSummary} />
+							<FinancialSummary
+								summary={financialSummary}
+								netSummary={netFinancialSummary}
+								showNetto={showNetto}
+								onShowNettoChange={setShowNetto}
+							/>
 						</>
 					) : (
 						<div className="flex flex-col items-center justify-center h-full min-h-[400px] text-slate-400">

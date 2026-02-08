@@ -287,7 +287,9 @@ export function calculateFinancialSummary(
 	const perType: FinancialRow[] = [];
 	for (const [type, days] of daysByType) {
 		const rule = LEAVE_RULES[type];
-		const dailyIncome = calculateLeaveIncome(
+		// Fully employer-paid leave has no income impact
+		const isFullPay = rule.salaryPercentage === 100 && rule.uwvDayCap === null;
+		const dailyIncome = isFullPay ? dailyGross : calculateLeaveIncome(
 			dailyGross,
 			rule.salaryPercentage,
 			rule.uwvDayCap,
@@ -347,7 +349,10 @@ export function calculateFinancialSummary(
 		let actualIncome = normalIncome;
 
 		for (const [leaveType, days] of leaveDaysInMonth) {
+			// Fully employer-paid leave has no income impact
 			const rule = LEAVE_RULES[leaveType];
+			if (rule.salaryPercentage === 100 && rule.uwvDayCap === null) continue;
+
 			const dailyLeave = calculateLeaveIncome(
 				dailyGross,
 				rule.salaryPercentage,
