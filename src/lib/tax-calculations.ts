@@ -162,26 +162,55 @@ export function calculateNetFinancialSummary(
 	const netRatioActual =
 		annualGrossActual > 0 ? annualNetActual / annualGrossActual : 0;
 
+	const totalNetDifference =
+		Math.round((annualNetActual - annualNetNormal) * 100) / 100;
+	const totalBrutoDifference = grossSummary.monthly.reduce(
+		(sum, m) => sum + m.difference,
+		0,
+	);
+
 	// Apply ratios to monthly amounts
+	// Distribute the total netto difference proportionally based on each month's
+	// share of the bruto difference. This avoids months with small bruto losses
+	// showing a phantom positive netto difference due to the higher net ratio.
 	const monthly = grossSummary.monthly.map((m: MonthlyRow) => {
 		const netNormal = Math.round(m.normalIncome * netRatioNormal * 100) / 100;
 		const netActual = Math.round(m.actualIncome * netRatioActual * 100) / 100;
+		const netDifference =
+			totalBrutoDifference !== 0 && m.difference !== 0
+				? Math.round(
+						(m.difference / totalBrutoDifference) *
+							totalNetDifference *
+							100,
+					) / 100
+				: 0;
 		return {
 			netNormalIncome: netNormal,
 			netActualIncome: netActual,
-			netDifference: Math.round((netActual - netNormal) * 100) / 100,
+			netDifference,
 		};
 	});
 
 	// Apply ratios to per-type amounts
+	// Same proportional distribution for per-type breakdown.
+
 	const perType = grossSummary.perType.map((row: FinancialRow) => {
 		const netTotal = Math.round(row.totalIncome * netRatioActual * 100) / 100;
 		const netNormal = Math.round(row.normalIncome * netRatioNormal * 100) / 100;
+		// Attribute netto difference proportionally to types that cause bruto loss
+		const netDifference =
+			totalBrutoDifference !== 0 && row.difference !== 0
+				? Math.round(
+						(row.difference / totalBrutoDifference) *
+							totalNetDifference *
+							100,
+					) / 100
+				: 0;
 		return {
 			type: row.type,
 			netTotalIncome: netTotal,
 			netNormalIncome: netNormal,
-			netDifference: Math.round((netTotal - netNormal) * 100) / 100,
+			netDifference,
 		};
 	});
 
