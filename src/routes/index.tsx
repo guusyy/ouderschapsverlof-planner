@@ -29,8 +29,6 @@ function App() {
 		leaveBudgets,
 		financialSummary,
 		netFinancialSummary,
-		showNetto,
-		setShowNetto,
 		validationErrors,
 		manualDays,
 		selectedBrush,
@@ -101,8 +99,6 @@ function App() {
 							<FinancialSummary
 								summary={financialSummary}
 								netSummary={netFinancialSummary}
-								showNetto={showNetto}
-								onShowNettoChange={setShowNetto}
 							/>
 						</>
 					) : (

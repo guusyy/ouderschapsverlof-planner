@@ -67,7 +67,6 @@ export function usePlannerState() {
 		urlState.current?.manualDays ?? {},
 	);
 	const [selectedBrush, setSelectedBrush] = useState<LeaveType | null>(null);
-	const [showNetto, setShowNetto] = useState(false);
 	const [hasInitialized, setHasInitialized] = useState(initializedFromUrl);
 
 	// Sync nextId to avoid collisions with restored periods
@@ -142,12 +141,12 @@ export function usePlannerState() {
 	);
 
 	const netFinancialSummary = useMemo(() => {
-		if (!showNetto || monthlySalary <= 0 || !birthDate) return null;
+		if (monthlySalary <= 0 || !birthDate) return null;
 		const workRatio = workWeek.hoursPerWeek / FULLTIME_HOURS;
 		const scaledMonthlySalary = monthlySalary * workRatio;
 		const taxYear = birthDate.getFullYear();
 		return calculateNetFinancialSummary(financialSummary, scaledMonthlySalary, taxYear);
-	}, [showNetto, monthlySalary, birthDate, workWeek.hoursPerWeek, financialSummary]);
+	}, [monthlySalary, birthDate, workWeek.hoursPerWeek, financialSummary]);
 
 	const validationErrors = useMemo(
 		() => validateLeaveConfig(input, dayMap, overlaps, leaveBudgets),
@@ -201,8 +200,6 @@ export function usePlannerState() {
 		leaveBudgets,
 		financialSummary,
 		netFinancialSummary,
-		showNetto,
-		setShowNetto,
 		validationErrors,
 		manualDays,
 		selectedBrush,
